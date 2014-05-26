@@ -1,0 +1,17 @@
+#! /usr/bin/python
+
+import tweets
+import sys
+
+# dependency
+from matplotlib import pyplot
+
+if len(sys.argv) < 2:
+  sys.stderr.write("USAGE: %s /path/to/tweets.zip\n" % __file__)
+  exit(1)
+
+pyplot.hist(
+    list(map(lambda t: t.hour + t.minute / 60.0 + t.second / 3600.0,
+      map(lambda tw: tweets.parse_created_at(tw["created_at"]), tweets.open(sys.argv[1])))),
+    bins = 24)
+pyplot.show()
