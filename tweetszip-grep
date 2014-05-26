@@ -20,9 +20,25 @@ if len(sys.argv) > 3:
 
 pat = re.compile(rx, flags = flags)
 
+def __hljudge():
+  try:
+    import __main__
+    __main__.termcolor = __import__("termcolor")
+    return sys.stdout.isatty()
+  except ImportError:
+    return False
+
+hlflag = __hljudge()
+
 for tw in tweets.open(filename):
-  if pat.search((tw.get("retweeted_status", None) or tw)["text"]):
+  if "retweeted_status" in tw:
+    text = "RT @%s: %s" % (tw["retweeted_status"]["user"]["screen_name"], tw["retweeted_status"]["text"])
+  else:
+    text = tw["text"]
+  if pat.search(text):
+    if hlflag:
+      text = pat.sub(lambda m: termcolor.colored(m.group(0), "red"), text)
     print("%s [%s]" % (
-      tw["text"],
+      text,
       "https://twitter.com/%s/statuses/%d/" % (tw["user"]["screen_name"], tw["id"])
     ))
