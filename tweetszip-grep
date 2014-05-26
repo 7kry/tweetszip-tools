@@ -1,0 +1,28 @@
+#! /usr/bin/python
+
+import re
+import sys
+import tweets
+
+if len(sys.argv) < 3:
+  sys.stderr.write("USAGE: %s </path/to/tweets.zip> <python-regexp> [ADILMSX]\n" % __file__)
+  exit(1)
+
+__, filename, rx = sys.argv
+
+flags = 0
+if len(sys.argv) > 3:
+  for c in sys.argv[3]:
+    if c.upper() not in re.__dict__ or not isinstance(re.__dict__[c.upper()], int):
+      sys.stderr.write("ERROR: Unknown flag `%s'\n" % c)
+      exit(1)
+    flags |= re.__dict__[c.upper()]
+
+pat = re.compile(rx, flags = flags)
+
+for tw in tweets.open(filename):
+  if pat.search((tw.get("retweeted_status", None) or tw)["text"]):
+    print("%s [%s]" % (
+      tw["text"],
+      "https://twitter.com/%s/statuses/%d/" % (tw["user"]["screen_name"], tw["id"])
+    ))
