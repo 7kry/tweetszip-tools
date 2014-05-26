@@ -8,7 +8,7 @@ if len(sys.argv) < 3:
   sys.stderr.write("USAGE: %s </path/to/tweets.zip> <python-regexp> [ADILMSX]\n" % __file__)
   exit(1)
 
-__, filename, rx = sys.argv
+__, filename, rx, *__ = sys.argv
 
 flags = 0
 if len(sys.argv) > 3:
