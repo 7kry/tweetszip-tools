@@ -50,11 +50,18 @@ pyplot.bar(pos, vals)
 pyplot.gca().xaxis.set_major_formatter(
     matplotlib.ticker.FuncFormatter(
       lambda x, pos: (lambda d: "%02d/%02d/%d" % (d.month, d.day, d.year))(beg + delta * int(x))))
-#pyplot.xticks(pos, labs)
 
 print()
 print("The number of days when you tweeted:")
 print("  %d / %d" % (tweeted, len(counter)))
+print("Mean:")
+print("  %f" % numpy.mean(vals))
+print("Median:")
+print("  %f" % numpy.median(vals))
+print("Standard Deviation:")
+print("  %f" % numpy.std(vals))
+
+pyplot.figure("daily_hist")
+pyplot.hist(vals)
 
 pyplot.show()
-
