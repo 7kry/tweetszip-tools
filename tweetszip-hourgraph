@@ -10,9 +10,15 @@ if len(sys.argv) < 2:
   sys.stderr.write("USAGE: %s /path/to/tweets.zip\n" % __file__)
   exit(1)
 
-pyplot.hist(
-    list(map(lambda t: t.hour + t.minute / 60.0 + t.second / 3600.0,
-      map(lambda tw: tweets.parse_created_at(tw["created_at"]), tweets.open(sys.argv[1])))),
-    bins = 24,
-    range = (0, 24))
+HOURS = range(0, 24)
+counter = [0 for i in HOURS]
+for tw in tweets.open(sys.argv[1]):
+  d = tweets.parse_created_at(tw["created_at"])
+  counter[d.hour] += 1
+
+for h, val in enumerate(counter):
+  print("%02d: %d" % (h, val))
+
+pyplot.figure("hourly")
+pyplot.bar(*list(zip(*enumerate(counter))))
 pyplot.show()
