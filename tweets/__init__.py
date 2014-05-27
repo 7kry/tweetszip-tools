@@ -16,5 +16,8 @@ def open(filename):
     return ret
 
 def parse_created_at(created_at):
-  return datetime.datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S +0000")\
-                 .replace(tzinfo = pytz.timezone("UTC")).astimezone(dateutil.tz.tzlocal())
+  try:
+    t = datetime.datetime.strptime(created_at, "%Y-%m-%d %H:%M:%S +0000")
+  except ValueError:
+    t = datetime.datetime.strptime(created_at, "%a %b %d %H:%M:%S +0000 %Y")
+  return t.replace(tzinfo = pytz.timezone("UTC")).astimezone(dateutil.tz.tzlocal())
