@@ -13,5 +13,6 @@ if len(sys.argv) < 2:
 pyplot.hist(
     list(map(lambda t: t.hour + t.minute / 60.0 + t.second / 3600.0,
       map(lambda tw: tweets.parse_created_at(tw["created_at"]), tweets.open(sys.argv[1])))),
-    bins = 24)
+    bins = 24,
+    range = (0, 24))
 pyplot.show()
