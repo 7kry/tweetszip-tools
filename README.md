@@ -1,4 +1,10 @@
 tweetszip-tools
 ===============
 
-tweets.zipで遊ぶのはプログラマの嗜み (?)
+Let's analyze your tweets.zip with tweetszip-tools!
+
+# Dependencies
+* python3
+* matplotlib
+* dateutil
+* pytz
