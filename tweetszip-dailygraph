@@ -1,0 +1,60 @@
+#! /usr/bin/python3
+
+import sys
+import tweets
+import datetime
+
+# dependencies
+import matplotlib
+from matplotlib import pyplot
+import numpy
+
+if len(sys.argv) < 2:
+  sys.stderr.write("USAGE: %s /path/to/tweets.zip\n" % __file__)
+  exit(1)
+
+counter = {}
+
+for tw in tweets.open(sys.argv[1]):
+  dt = tweets.parse_created_at(tw["created_at"])
+  key = (dt.year, dt.month, dt.day)
+  counter[key] = counter.get(key, 0) + 1
+
+keys  = sorted(counter)
+delta = datetime.timedelta(days = 1)
+beg   = datetime.date(*keys[ 0])
+end   = datetime.date(*keys[-1])
+
+tweeted = 0
+
+for i in range(0, (end - beg).days + 1):
+  it  = beg + delta * i
+  key = (it.year, it.month, it.day)
+  if key in counter:
+    tweeted += 1
+  else:
+    counter[key] = 0
+
+pyplot.figure("daily_counts")
+
+pos  = []
+vals = []
+
+for idx, key in enumerate(sorted(counter)):
+  lab = "%02d/%02d/%d" % (key[1], key[2], key[0])
+  print("%s: %d" % (lab, counter[key]))
+  pos.append(idx)
+  vals.append(counter[key])
+
+pyplot.bar(pos, vals)
+pyplot.gca().xaxis.set_major_formatter(
+    matplotlib.ticker.FuncFormatter(
+      lambda x, pos: (lambda d: "%02d/%02d/%d" % (d.month, d.day, d.year))(beg + delta * int(x))))
+#pyplot.xticks(pos, labs)
+
+print()
+print("The number of days when you tweeted:")
+print("  %d / %d" % (tweeted, len(counter)))
+
+pyplot.show()
+
