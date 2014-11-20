@@ -1,0 +1,77 @@
+#! /usr/bin/python3
+
+import tweets
+from zipfile import ZipFile
+import sys
+from pprint import pprint
+import dateutil.tz
+import copy
+import csv
+import tempfile
+import itertools
+import datetime
+import json
+
+def __csvformat(tw):
+  tw = copy.deepcopy(tw)
+  tw["created_at"] = tw['created_at'].astimezone(dateutil.tz.tzutc()).strftime(tweets.CSV_TSFORMAT)
+  if 'retweeted_status' in tw:
+    tw['retweeted_status']["created_at"] = tw['retweeted_status']['created_at'].astimezone(dateutil.tz.tzutc()).strftime(tweets.CSV_TSFORMAT)
+  return tw
+
+def __jsonformat(tw):
+  tw = copy.deepcopy(tw)
+  tw["created_at"] = tw['created_at'].astimezone(dateutil.tz.tzutc()).strftime(tweets.JSON_TSFORMAT)
+  if 'retweeted_status' in tw:
+    tw['retweeted_status']["created_at"] = tw['retweeted_status']['created_at'].astimezone(dateutil.tz.tzutc()).strftime(tweets.JSON_TSFORMAT)
+  return tw
+
+def __grouper(tw):
+  return (tw['created_at'].year, tw['created_at'].month)
+
+if len(sys.argv) < 3:
+  sys.stderr.write("USAGE: %s /path/to/output.zip /path/to/source1.zip [/path/to/source2.zip ...]\n" % __file__)
+  exit(1)
+
+dest = sys.argv[1]
+srcs = sys.argv[2:]
+twdict = {}
+
+for fn in srcs:
+  for tw in tweets.open(fn):
+    tw['created_at'] = tweets.parse_created_at(tw['created_at'])
+    if 'retweeted_status' in tw:
+      tw['retweeted_status']['created_at'] = tweets.parse_created_at(tw['retweeted_status']['created_at'])
+    twdict[tw['id']] = tw
+
+twlist = list(map(twdict.__getitem__, sorted(twdict.keys())))
+
+with open(dest, 'w+b') as dfp:
+  with ZipFile(dfp, 'a') as dzip:
+    payload_details = None
+    with ZipFile(open(srcs[-1], 'rb')) as src:
+      for finfo in filter(lambda info: info.filename == 'data/js/user_details.js' or info.filename != 'tweets.csv' and not info.filename.startswith('data/'), src.infolist()):
+        dzip.writestr(finfo.filename, src.read(finfo.filename))
+      payload_details = json.loads(src.open('data/js/payload_details.js').read().decode('utf-8').replace('var payload_details =', ''))
+    with tempfile.TemporaryFile('w+') as fp:
+      csvdest = csv.writer(fp)
+      csvdest.writerow(tweets.CSV_SCHEMA)
+      csvdest.writerows(map(tweets.status_to_csvrow, map(__csvformat, reversed(twlist))))
+      fp.seek(0)
+      dzip.writestr('tweets.csv', fp.read().encode('UTF-8'))
+      payload_details['tweets'] = len(twlist)
+      payload_details['created_at'] = datetime.datetime.now(dateutil.tz.tzutc()).strftime(tweets.JSON_TSFORMAT)
+      dzip.writestr('data/js/payload_details.js', ("var payload_details =\n" + json.dumps(payload_details, indent = 2)).encode('utf-8'))
+      tweet_index = []
+      for k, g in itertools.groupby(reversed(twlist), __grouper):
+        li = list(map(__jsonformat, g))
+        index = {
+          'file_name':   'data/js/tweets/%d_%02d.js' % k,
+          'year':        k[0],
+          'month':       k[1],
+          'tweet_count': len(li),
+          'var_name':    'tweets_%d_%02d' % k,
+        }
+        dzip.writestr(index['file_name'], 'Grailbird.data.' + index['var_name'] + " =\n" + json.dumps(li, indent = 2))
+        tweet_index.append(index)
+      dzip.writestr('data/js/tweet_index.js', "var tweet_index =\n" + json.dumps(tweet_index, indent = 2))
