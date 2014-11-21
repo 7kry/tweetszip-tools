@@ -2,7 +2,7 @@
 
 import re
 import sys
-import tweets
+import tweetsziptools as tweets
 
 if len(sys.argv) < 3:
   sys.stderr.write("USAGE: %s /path/to/tweets.zip <python-regexp> [ADILMSX]\n" % __file__)
