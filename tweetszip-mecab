@@ -1,0 +1,41 @@
+#! /usr/bin/python3
+
+import tweetsziptools as tweets
+import sys
+import re
+
+# dependencies
+import MeCab
+
+if len(sys.argv) < 2:
+  sys.stderr.write("USAGE: %s /path/to/tweets.zip\n" % __file__)
+  exit(1)
+
+filename = sys.argv[1]
+stored = {}
+tagger = MeCab.Tagger('')
+before = None
+
+for tw in tweets.open(filename):
+  if 'retweeted_status' in tw:
+    continue
+
+  for line in map(str.rstrip, tagger.parse(tw['text']).rstrip().split('\n')):
+    if line == 'EOS':
+      continue
+    if re.match('^\s', line):
+      morpheme = before
+      tag = line
+    else:
+      splited = line.split()
+      morpheme, tag = splited[0:2]
+      before = morpheme
+    part = tag.split(',')[0]
+    d = stored.get(part, {})
+    d[morpheme] = d.get(morpheme, 0) + 1
+    stored[part] = d
+
+for part, morphs in stored.items():
+  print("-*- %s -*-" % part)
+  for k, v in reversed(sorted(morphs.items(), key = lambda elem: int(elem[1]))):
+    print("  %s: %s" % (k, v))
