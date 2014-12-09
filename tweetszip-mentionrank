@@ -1,0 +1,22 @@
+#! /usr/bin/python3
+
+import sys
+import tweetsziptools as tweets
+
+if len(sys.argv) < 2:
+  sys.stderr.write("USAGE: %s /path/to/tweets.zip\n" % __file__)
+  exit(1)
+
+counter = {}
+id_sn   = {}
+
+for tw in tweets.open(sys.argv[1]):
+  for elem in tw['entities']['user_mentions']:
+    uid, sn = elem['id'], elem['screen_name']
+    id_sn[uid] = sn
+    counter[uid] = counter.get(uid, 0) + 1
+
+for uid, count in \
+      sorted(counter.items(), key = lambda pair: -pair[1]):
+  print('@%s: %d' % (id_sn[uid], count))
+
